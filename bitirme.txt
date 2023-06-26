@@ -1,0 +1,195 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_KULLANICI_SAYISI 100
+#define MAX_HESAP_SAYISI 100
+#define MAX_AD_UZUNLUGU 50
+#define DOSYA_ADI "banka_verileri.txt"
+
+typedef struct Kullanici {
+    char ad[MAX_AD_UZUNLUGU];
+    int hesapNo;
+    double bakiye;
+} Kullanici;
+
+Kullanici kullaniciListesi[MAX_KULLANICI_SAYISI];
+int kullaniciSayisi = 0;
+
+void kayitOlustur(char *ad, int hesapNo, double baslangicBakiye) {
+    if (kullaniciSayisi >= MAX_KULLANICI_SAYISI) {
+        printf("Maksimum kullanici sayisina ulasildi.\n");
+        return;
+    }
+
+    Kullanici yeniKullanici;
+    strncpy(yeniKullanici.ad, ad, sizeof(yeniKullanici.ad) - 1);
+    yeniKullanici.ad[sizeof(yeniKullanici.ad) - 1] = '\0';
+    yeniKullanici.hesapNo = hesapNo;
+    yeniKullanici.bakiye = baslangicBakiye;
+
+    kullaniciListesi[kullaniciSayisi++] = yeniKullanici;
+
+    printf("Kayit olusturuldu. Hesap No: %d\n", yeniKullanici.hesapNo);
+}
+
+void hesabaGiris(int hesapNo) {
+    int i;
+    for (i = 0; i < kullaniciSayisi; i++) {
+        if (kullaniciListesi[i].hesapNo == hesapNo) {
+            double bakiye = kullaniciListesi[i].bakiye;
+
+            int secim;
+            do {
+                printf("\n1. Bakiye Goruntule\n");
+                printf("2. Bakiye Yatir\n");
+                printf("3. Bakiye Cek\n");
+                printf("4. Cikis\n");
+                printf("Seciminizi yapin: ");
+                scanf("%d", &secim);
+
+                switch (secim) {
+                    case 1:
+                        printf("Hesap No: %d, Bakiye: %.2f\n", kullaniciListesi[i].hesapNo, bakiye);
+                        break;
+                    case 2:
+                        printf("Yatirmak istediginiz miktar: ");
+                        double yatirilanMiktar;
+                        scanf("%lf", &yatirilanMiktar);
+                        if (yatirilanMiktar > 0) {
+                            bakiye += yatirilanMiktar;
+                            printf("%.2f TL yatirildi. Yeni bakiye: %.2f TL\n", yatirilanMiktar, bakiye);
+                        } else {
+                            printf("Gecersiz miktar.\n");
+                        }
+                        break;
+                    case 3:
+                        printf("Cekmek istediginiz miktar: ");
+                        double cekilenMiktar;
+                        scanf("%lf", &cekilenMiktar);
+                        if (cekilenMiktar > 0) {
+                            if (bakiye >= cekilenMiktar) {
+                                bakiye -= cekilenMiktar;
+                                printf("%.2f TL cekildi. Yeni bakiye: %.2f TL\n", cekilenMiktar, bakiye);
+                            } else {
+                                printf("Yetersiz bakiye.\n");
+                            }
+                        } else {
+                            printf("Gecersiz miktar.\n");
+                        }
+                        break;
+                    case 4:
+                        printf("Cikis yapildi.\n");
+                        break;
+                    default:
+                        printf("Gecersiz secim.\n");
+                        break;
+                }
+            } while (secim != 4);
+
+            kullaniciListesi[i].bakiye = bakiye;
+            return;
+        }
+    }
+
+    printf("Hesap bulunamadi.\n");
+}
+
+void kullaniciSil(int hesapNo) {
+    int i;
+    for (i = 0; i < kullaniciSayisi; i++) {
+        if (kullaniciListesi[i].hesapNo == hesapNo) {
+            kullaniciListesi[i] = kullaniciListesi[kullaniciSayisi - 1];
+            kullaniciSayisi--;
+            printf("Hesap silindi.\n");
+            return;
+        }
+    }
+
+    printf("Hesap bulunamadi.\n");
+}
+
+void verileriKaydet() {
+    FILE *dosya = fopen(DOSYA_ADI, "w");
+    if (dosya == NULL) {
+        printf("Dosya acilamadi.\n");
+        return;
+    }
+
+    int i;
+    for (i = 0; i < kullaniciSayisi; i++) {
+        fprintf(dosya, "%s %d %.2f\n", kullaniciListesi[i].ad, kullaniciListesi[i].hesapNo, kullaniciListesi[i].bakiye);
+    }
+
+    fclose(dosya);
+
+    printf("Veriler dosyaya kaydedildi.\n");
+}
+
+void verileriYukle() {
+    FILE *dosya = fopen(DOSYA_ADI, "r");
+    if (dosya == NULL) {
+        printf("Dosya acilamadi.\n");
+        return;
+    }
+
+    kullaniciSayisi = 0;
+    while (fscanf(dosya, "%s %d %lf", kullaniciListesi[kullaniciSayisi].ad, &kullaniciListesi[kullaniciSayisi].hesapNo, &kullaniciListesi[kullaniciSayisi].bakiye) == 3) {
+        kullaniciSayisi++;
+    }
+
+    fclose(dosya);
+
+    printf("Veriler dosyadan yuklendi.\n");
+}
+
+int main() {
+    verileriYukle();
+
+    int secim;
+    do {
+        printf("\n1. Kayit Olustur\n");
+        printf("2. Hesaba Giris\n");
+        printf("3. Hesap Sil\n");
+        printf("4. Cikis\n");
+        printf("Seciminizi yapin: ");
+        scanf("%d", &secim);
+
+        switch (secim) {
+            case 1:
+                printf("Ad: ");
+                char ad[MAX_AD_UZUNLUGU];
+                scanf("%s", ad);
+                printf("Hesap No: ");
+                int hesapNo;
+                scanf("%d", &hesapNo);
+                printf("Baslangic Bakiye: ");
+                double baslangicBakiye;
+                scanf("%lf", &baslangicBakiye);
+                kayitOlustur(ad, hesapNo, baslangicBakiye);
+                break;
+            case 2:
+                printf("Hesap No: ");
+                int girisHesapNo;
+                scanf("%d", &girisHesapNo);
+                hesabaGiris(girisHesapNo);
+                break;
+            case 3:
+                printf("Hesap No: ");
+                int silinecekHesapNo;
+                scanf("%d", &silinecekHesapNo);
+                kullaniciSil(silinecekHesapNo);
+                break;
+            case 4:
+                printf("Programdan cikiliyor...\n");
+                break;
+            default:
+                printf("Gecersiz secim.\n");
+                break;
+        }
+    } while (secim != 4);
+
+    verileriKaydet();
+
+    return 0;
+}
